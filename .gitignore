@@ -1,0 +1,7 @@
+__pycache__/
+.env
+.flaskenv
+.venv/
+tests/
+instance/
+.idea
