@@ -1,9 +1,10 @@
 from flask import Flask
 from .config import Config
-from .extensions import db, migrate
+from .extensions import db, migrate, jwt
 from .routes import register_blueprints
 from .models.user_models import *
 from .models.course_models import *
+
 
 
 def create_app():
@@ -11,6 +12,7 @@ def create_app():
     app.config.from_object(Config)
     db.init_app(app)
     migrate.init_app(app, db)
+    jwt.init_app(app)
 
     register_blueprints(app)
 
