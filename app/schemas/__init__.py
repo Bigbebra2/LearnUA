@@ -1,1 +1,1 @@
-from .pd_schemas import RegisterModel, LoginModel
+from .pd_schemas import RegisterModel, LoginModel, ProfileModel

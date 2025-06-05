@@ -3,9 +3,11 @@ from flask import Blueprint, request, jsonify
 from ..schemas import RegisterModel, LoginModel
 from ..models import User, Profile
 from werkzeug.security import generate_password_hash, check_password_hash
-from ..extensions import db
-from flask_jwt_extended import create_access_token, create_refresh_token
+from ..extensions import db, jwt_redis_blocklist
+from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, unset_jwt_cookies
 from datetime import timedelta
+from flask_jwt_extended import jwt_required, get_jwt
+from jwt import decode
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -57,8 +59,8 @@ def login():
         if (not user) or (not check_password_hash(user.password, login_model.password)):
             return jsonify(msg='Wrong email or password'), 401
         else:
-            access_token = create_access_token(identity=user.id, fresh=True, expires_delta=timedelta(minutes=30))
-            refresh_token = create_refresh_token(identity=user.id, expires_delta=timedelta(days=7))
+            access_token = create_access_token(identity=str(user.id), fresh=True, expires_delta=timedelta(minutes=30))
+            refresh_token = create_refresh_token(identity=str(user.id), expires_delta=timedelta(days=7))
 
     except pydantic.ValidationError as e:
         return jsonify(
@@ -68,9 +70,12 @@ def login():
     except Exception as e:
         return jsonify(msg=f'Server error, please report: {e}'), 500
 
-    return jsonify(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        user_id=user.id
-    )
+
+    response = jsonify({"msg": "login successful"})
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+
+    return response
+
+
 
