@@ -1,9 +1,11 @@
 import pydantic
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app, send_from_directory
 from ..models import Profile
 from flask_jwt_extended import jwt_required, current_user
 from ..schemas import ProfileModel
 from ..extensions import db
+import os
+from werkzeug.utils import secure_filename
 
 
 user_pb = Blueprint('user', __name__)
@@ -53,8 +55,49 @@ def update_profile():
     db.session.commit()
     return jsonify(msg='Profile updated successfully'), 200
 
+@user_pb.route('/upload-ava', methods=['PUT'])
+@jwt_required()
+def upload_ava():
+   file = request.files.get('ava')
+   if not file or file.filename == '':
+       return jsonify(msg='File not uploaded or has empty name')
+
+   ext = os.path.splitext(file.filename)[1]
+   if ext not in current_app.config['ALLOWED_IMAGE_EXTENSIONS']:
+       return jsonify(msg='File has not allowed extension'), 400
+
+   max_size = current_app.config['MAX_AVA_SIZE']
+
+   file.seek(0, 2)
+   size = file.tell()
+   file.seek(0)
+   if size > max_size:
+       return jsonify(msg=f'File too large, max size: {max_size}'), 400
+
+   try:
+       filename = secure_filename(f'{current_user.id}_ava{ext}')
+       path = os.path.join(os.getcwd(), 'uploads', f'user_{current_user.id}', filename)
+
+       if os.path.isfile(path):
+           os.remove(path)
+
+       os.makedirs(os.path.split(path)[0], exist_ok=True)
+       file.save(path)
+   except Exception as e:
+       return jsonify(msg=f'File uploading error: {e}'), 500
+
+   return jsonify(msg='Profile ava updated successfully')
 
 
+@user_pb.route('/ava/<int:user_id>')
+def get_avatar(user_id):
+    try:
+        path = os.path.join(os.path.split(current_app.root_path)[0], 'uploads', f'user_{user_id}')
+        if os.path.isdir(path):
+            files = os.listdir(path)
+            if files and os.path.splitext(files[0])[1] in current_app.config['ALLOWED_IMAGE_EXTENSIONS']:
+                return send_from_directory(path, files[0], mimetype='image/jpeg')
+    except Exception as e:
+        return jsonify(msg=f'File defining error: {e}'), 500
 
-
-
+    return jsonify(msg='No ava'), 404

@@ -13,3 +13,6 @@ class Config:
     JWT_REFRESH_COOKIE_NAME = "refresh_token_cookie"
     JWT_COOKIE_SECURE = False  # True if only https HTTPS
     JWT_COOKIE_CSRF_PROTECT = True
+    MAX_AVA_SIZE = 1024000
+    ALLOWED_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp', '.gif')
+
