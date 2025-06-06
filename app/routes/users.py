@@ -14,7 +14,6 @@ def user_profile(user_id):
     if not profile:
         jsonify(msg='Profile not found'), 404
 
-
     return jsonify(
         id=profile.id,
         user_id=profile.user_id,

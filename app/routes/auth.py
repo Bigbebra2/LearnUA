@@ -3,11 +3,12 @@ from flask import Blueprint, request, jsonify
 from ..schemas import RegisterModel, LoginModel
 from ..models import User, Profile
 from werkzeug.security import generate_password_hash, check_password_hash
-from ..extensions import db, jwt_redis_blocklist
-from flask_jwt_extended import create_access_token, create_refresh_token, set_access_cookies, set_refresh_cookies, unset_jwt_cookies
+from ..extensions import db
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                set_access_cookies, set_refresh_cookies,
+                                jwt_required, unset_jwt_cookies, current_user)
 from datetime import timedelta
-from flask_jwt_extended import jwt_required, get_jwt
-from jwt import decode
+from ..services import logout_cookies
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -70,12 +71,35 @@ def login():
     except Exception as e:
         return jsonify(msg=f'Server error, please report: {e}'), 500
 
-
     response = jsonify({"msg": "login successful"})
     set_access_cookies(response, access_token)
     set_refresh_cookies(response, refresh_token)
 
     return response
+
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    access_token = create_access_token(identity=str(current_user.id))
+    response = jsonify(msg='Access token created successfully')
+    set_access_cookies(response, access_token)
+    return response
+
+@auth_bp.route('/logout', methods=['DELETE'])
+@jwt_required(verify_type=False)
+def logout():
+    result = logout_cookies()
+
+    response = jsonify(
+        errrors=result.get('errors'),
+        revoked_tokens=result.get('revoked_tokens')
+    )
+    unset_jwt_cookies(response)
+    return response
+
+
+
+
 
 
 
