@@ -1,6 +1,6 @@
 from flask import Flask
 from .config import Config
-from .extensions import db, migrate, jwt
+from .extensions import db, migrate, jwt, cors
 from .routes import register_blueprints
 from .models.user_models import *
 from .models.course_models import *
@@ -13,6 +13,10 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    cors.init_app(
+        app,
+        resources={r"/api/*": {"origins": "http://localhost:3000"}}
+    )
 
     register_blueprints(app)
 

@@ -10,6 +10,9 @@ from werkzeug.utils import secure_filename
 
 user_pb = Blueprint('user', __name__)
 
+@
+
+
 @user_pb.route('/<int:user_id>/profile')
 def user_profile(user_id):
     profile = Profile.query.filter_by(user_id=user_id).one_or_none()

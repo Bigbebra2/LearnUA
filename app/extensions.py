@@ -3,6 +3,7 @@ from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
 from flask_jwt_extended import JWTManager
 from redis import Redis
+from flask_cors import CORS
 
 
 class Base(DeclarativeBase):
@@ -12,6 +13,7 @@ db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
 jwt = JWTManager()
 jwt_redis_blocklist = Redis('127.0.0.1', port=6379, db=0)
+cors = CORS()
 
 
 @jwt.token_in_blocklist_loader

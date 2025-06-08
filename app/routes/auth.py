@@ -13,6 +13,11 @@ from ..services import logout_cookies
 
 auth_bp = Blueprint('auth', __name__)
 
+@auth_bp.route('/is-authorized')
+@jwt_required()
+def my_profile():
+    return jsonify(msg='User is authorized'), 200
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     if not request.is_json:
