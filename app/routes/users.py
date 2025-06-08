@@ -10,7 +10,22 @@ from werkzeug.utils import secure_filename
 
 user_pb = Blueprint('user', __name__)
 
-@
+@user_pb.route('/my-profile')
+@jwt_required()
+def my_profile():
+    profile = current_user.profile
+
+    return jsonify(
+        user_data = {
+            'id': current_user.id,
+            'reg_datetime': current_user.reg_datetime,
+            'first_name': profile.first_name,
+            'last_name': profile.last_name,
+            'age': profile.age,
+            'bio': profile.bio,
+            'contacts': [{cont.split(': ')[0]: cont.split(': ')[1]} for cont in profile.contacts.split('\n')]
+        }
+    )
 
 
 @user_pb.route('/<int:user_id>/profile')
@@ -26,7 +41,7 @@ def user_profile(user_id):
         last_name=profile.last_name,
         age=profile.age,
         bio=profile.bio,
-        contacts=profile.contacts,
+        contacts=[{cont.split(': ')[0]: cont.split(': ')[1]} for cont in profile.contacts.split('\n')],
         reg_datetime=profile.user.reg_datetime
     ), 200
 

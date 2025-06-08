@@ -33,6 +33,23 @@ class LoginModel(BaseModel):
     password: Annotated[str, Field(min_length=8, max_length=128)]
 
 
+class CourseIn(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={'examples': [
+            {
+                "title": "C++ mega course",
+                "description": "Master modern C++ with hands-on coding."
+            }
+        ]}
+    )
+
+    title: Annotated[str, Field(min_length=10, max_length=180)]
+    description: Annotated[str, Field(min_length=32, max_length=1800)]
+
+
+
+
+
 class ProfileModel(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
