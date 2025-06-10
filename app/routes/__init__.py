@@ -7,4 +7,4 @@ from .courses import courses_bp
 def register_blueprints(app: Flask):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(user_pb, url_prefix='/api/user')
-    app.register_blueprint(courses_bp, url_prefix='/api/courses')
+    app.register_blueprint(courses_bp, url_prefix='/api/course')
