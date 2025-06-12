@@ -1,1 +1,1 @@
-from .pd_schemas import RegisterModel, LoginModel, ProfileModel, CourseIn, SectionIn
+from .pd_schemas import RegisterModel, LoginModel, ProfileModel, CourseIn, SectionIn, LessonIn

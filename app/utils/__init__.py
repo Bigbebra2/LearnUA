@@ -1,0 +1,1 @@
+from .main_utils import delete_all_files

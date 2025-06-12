@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, current_user
-from ..schemas import CourseIn, SectionIn
+from ..schemas import CourseIn, SectionIn, LessonIn
 import pydantic
-from ..models import Course, Section
+from ..models import Course, Section, Lesson
 from ..extensions import db
+from sqlalchemy import select
 
 
 courses_bp = Blueprint('courses', __name__)
@@ -29,7 +30,7 @@ def create_course():
         return jsonify(
             msg=str(e),
             example_json=CourseIn.model_json_schema().get('examples')
-        )
+        ), 400
     except Exception as e:
         db.session.rollback()
         return jsonify(msg=f'Server error, please report: {e}'), 500
@@ -43,7 +44,7 @@ def create_course():
 def add_section(course_id):
     if not request.is_json:
         return jsonify(msg='Expected json format'), 415
-    if course_id not in [c.id for c in current_user.courses]:
+    if course_id not in tuple(c.id for c in current_user.courses):
         return jsonify(msg='Can\'t edit this course'), 403
 
     try:
@@ -73,8 +74,53 @@ def add_section(course_id):
     db.session.commit()
     return jsonify(msg='Section successfully added'), 201
 
+@courses_bp.route('/<int:course_id>/<int:place>/add-lesson', methods=['POST'])
+@jwt_required()
+def add_lesson(course_id, place):
+    if not request.is_json:
+        return jsonify(msg='Expected json format'), 415
 
+    sub_query = select(Course.id).where(Course.author_id == current_user.id).scalar_subquery()
+    section_query = select(Section).where(
+        Section.course_id.in_(sub_query),
+        Section.course_id == course_id,
+        Section.place == place
+    )
+    section = db.session.execute(section_query).scalars().one_or_none()
+    if not section:
+        return jsonify(msg='You can\'t modify this section'), 403
+    lesson_place = len(section.lessons) + 1
 
+    try:
+        lesson_model = LessonIn.model_validate(request.get_json())
+        existing_lesson = db.session.execute(
+            select(Lesson).where(
+                Lesson.section_id == section.id,
+                Lesson.title == lesson_model.title
+            )
+        ).scalar_one_or_none()
+
+        if existing_lesson:
+            return jsonify(msg='Title must be unique'), 400
+
+        lesson = Lesson(
+            title=lesson_model.title,
+            section_id=section.id,
+            place=lesson_place
+        )
+        db.session.add(lesson)
+
+    except pydantic.ValidationError as e:
+        return jsonify(
+            msg=str(e),
+            example_json=LessonIn.model_json_schema().get('examples')
+        ), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(msg=f'Server error, please report: {e}'), 500
+
+    db.session.commit()
+    return jsonify(msg='Lesson created successfully'), 201
 
 
 

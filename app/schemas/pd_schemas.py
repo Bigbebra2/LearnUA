@@ -80,7 +80,17 @@ class SectionIn(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             'examples': [
-                {'title': 'some title'}
+                {'title': 'some section title'}
+            ]
+        }
+    )
+    title: TitleField
+
+class LessonIn(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {'title': 'some lesson title'}
             ]
         }
     )

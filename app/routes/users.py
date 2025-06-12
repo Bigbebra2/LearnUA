@@ -6,6 +6,7 @@ from ..schemas import ProfileModel
 from ..extensions import db
 import os
 from werkzeug.utils import secure_filename
+from ..utils import delete_all_files
 
 
 user_pb = Blueprint('user', __name__)
@@ -90,7 +91,7 @@ def update_profile():
 def upload_ava():
    file = request.files.get('ava')
    if not file or file.filename == '':
-       return jsonify(msg='File not uploaded or has empty name')
+       return jsonify(msg='File not uploaded or has empty name'), 400
 
    ext = os.path.splitext(file.filename)[1]
    if ext not in current_app.config['ALLOWED_IMAGE_EXTENSIONS']:
@@ -106,13 +107,13 @@ def upload_ava():
 
    try:
        filename = secure_filename(f'{current_user.id}_ava{ext}')
-       path = os.path.join(os.getcwd(), 'uploads', f'user_{current_user.id}', filename)
+       path = os.path.join(os.getcwd(), 'uploads', f'user_{current_user.id}', 'ava')
 
-       if os.path.isfile(path):
-           os.remove(path)
+       if os.path.isdir(path) and os.listdir(path):
+           delete_all_files(path)
 
-       os.makedirs(os.path.split(path)[0], exist_ok=True)
-       file.save(path)
+       os.makedirs(path, exist_ok=True)
+       file.save(os.path.join(path, filename))
    except Exception as e:
        return jsonify(msg=f'File uploading error: {e}'), 500
 
@@ -122,7 +123,7 @@ def upload_ava():
 @user_pb.route('/ava/<int:user_id>')
 def get_avatar(user_id):
     try:
-        path = os.path.join(os.path.split(current_app.root_path)[0], 'uploads', f'user_{user_id}')
+        path = os.path.join(os.path.split(current_app.root_path)[0], 'uploads', f'user_{user_id}', 'ava')
         if os.path.isdir(path):
             files = os.listdir(path)
             if files and os.path.splitext(files[0])[1] in current_app.config['ALLOWED_IMAGE_EXTENSIONS']:
