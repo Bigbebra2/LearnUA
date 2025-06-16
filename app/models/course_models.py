@@ -58,10 +58,6 @@ class Step(db.Model):
     place: Mapped[int] = mapped_column(Integer)
     content_type: Mapped[str] = mapped_column(String(64))
     content_path: Mapped[str] = mapped_column(String(256))
-    video_url: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    quiz_data: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    code_template: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    correct_code_result: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
     lesson: Mapped['Lesson'] = relationship('Lesson', back_populates='steps')
 
