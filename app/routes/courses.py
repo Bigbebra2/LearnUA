@@ -11,7 +11,7 @@ import os
 from urllib.parse import parse_qs
 
 
-courses_bp = Blueprint('courses', __name__)
+courses_bp = Blueprint('course', __name__)
 
 @courses_bp.route('/create-course', methods=['POST'])
 @jwt_required()
@@ -233,11 +233,32 @@ def delete_step(course_id, section_place, lesson_place):
         if os.path.isfile(step.content_path):
             os.remove(step.content_path)
 
+        steps = Step.query.filter_by(lesson_id=step.lesson_id).order_by(Step.place).all()
+        for p, st in enumerate(steps, start=1):
+            st.place = p
+
         db.session.commit()
         return jsonify(msg=f'Successfully deleted step {step.id} from\n{step.content_path}')
     except Exception as e:
         return jsonify(msg=f'Server error, please report: {e}'), 500
 
+@courses_bp.route('/<int:course_id>')
+def get_course_info(course_id):
+    course = Course.query.filter_by(id=course_id).one_or_none()
+    if not course:
+        return jsonify(
+            msg='Course not found'
+        ), 404
+    return jsonify(
+        title=course.title,
+        description=course.description,
+        created_at=str(course.created_at),
+        rating=course.rating,
+        sections=[{'title': c.title, 'place': c.place, 'id': c.id, 'lessons': [
+            {'title': les.title, 'place': les.place, 'id': les.id} for les in c.lessons
+        ]}
+                    for c in course.sections]
+    )
 
 
 

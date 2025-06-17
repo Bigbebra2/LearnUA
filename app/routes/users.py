@@ -7,6 +7,7 @@ from ..extensions import db
 import os
 from werkzeug.utils import secure_filename
 from ..utils import delete_all_files
+from datetime import datetime
 
 
 user_pb = Blueprint('user', __name__)
@@ -132,3 +133,15 @@ def get_avatar(user_id):
         return jsonify(msg=f'File defining error: {e}'), 500
 
     return jsonify(msg='No ava'), 404
+
+@user_pb.route('/created-courses')
+def get_created_courses():
+    courses = [ {
+        'title': c.title,
+        'created_at': str(c.created_at),
+        'rating': c.rating,
+        'id': c.id
+    }
+        for c in current_user.courses
+    ]
+    return jsonify(created_courses=courses)
