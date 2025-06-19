@@ -15,7 +15,7 @@ def get_lesson_info(lesson_id):
         title=lesson.title,
         place=lesson.place,
         steps=[
-            {'content_type': s.content_type, 'place': s.place, 'id': s.id}
+            {'content_type': s.content_type, 'place': s.place}
             for s in lesson.steps
         ]
     )

@@ -9,11 +9,12 @@ from ..extensions import db
 from sqlalchemy import select
 import os
 from urllib.parse import parse_qs
+from ..utils import update_step_place
 
 
 courses_bp = Blueprint('course', __name__)
 
-@courses_bp.route('/create-course', methods=['POST'])
+@courses_bp.route('/create', methods=['POST'])
 @jwt_required()
 def create_course():
     if not request.is_json:
@@ -41,7 +42,7 @@ def create_course():
 
     db.session.commit()
 
-    return jsonify(msg='Course created successfully'), 201
+    return jsonify(msg='Course created successfully', course_id=course.id), 201
 
 @courses_bp.route('/<int:course_id>/add-section', methods=['POST'])
 @jwt_required()
@@ -70,17 +71,17 @@ def add_section(course_id):
         return jsonify(
             msg=str(e),
             example_json=SectionIn.model_json_schema().get('examples')
-        )
+        ), 400
     except Exception as e:
         db.session.rollback()
         return jsonify(msg=f'Server error, please report: {e}'), 500
 
     db.session.commit()
-    return jsonify(msg='Section successfully added'), 201
+    return jsonify(msg='Section successfully added', section_id=section.id), 201
 
-@courses_bp.route('/<int:course_id>/<int:place>/add-lesson', methods=['POST'])
+@courses_bp.route('/<int:course_id>/<int:section_place>/add-lesson', methods=['POST'])
 @jwt_required()
-def add_lesson(course_id, place):
+def add_lesson(course_id, section_place):
     if not request.is_json:
         return jsonify(msg='Expected json format'), 415
 
@@ -88,7 +89,7 @@ def add_lesson(course_id, place):
     section_query = select(Section).where(
         Section.course_id.in_(sub_query),
         Section.course_id == course_id,
-        Section.place == place
+        Section.place == section_place
     )
     section = db.session.execute(section_query).scalars().one_or_none()
     if not section:
@@ -140,6 +141,8 @@ def add_step(course_id, section_place, lesson_place):
         Lesson.section_id.in_(sub_query),
         Lesson.place == lesson_place
     )).scalars().one_or_none()
+    if not lesson:
+        return jsonify(msg='Resource not found'), 400
 
     try:
         input_model = StepIn.model_validate(request.get_json())
@@ -162,7 +165,7 @@ def add_step(course_id, section_place, lesson_place):
         return jsonify(
             msg=str(e),
             example_json=StepIn.model_json_schema().get("examples")
-        )
+        ), 400
     except Exception as e:
         db.session.rollback()
         return jsonify(msg=f'Server error, please report: {e}'), 500
@@ -209,7 +212,11 @@ def get_step(course_id, section_place, lesson_place):
 def delete_step(course_id, section_place, lesson_place):
     query_params = {k: v if len(v) > 1 else v[0] for k, v in
                     parse_qs(request.query_string.decode(encoding='utf-8')).items()}
-    step_place = StepQuery.model_validate(query_params).step_place
+
+    try:
+        step_place = StepQuery.model_validate(query_params).step_place
+    except ValidationError:
+        return jsonify(msg='Missing query parameter \'step_place\''), 400
 
     try:
         course = select(Course.id).where(Course.author_id == current_user.id,
@@ -236,9 +243,10 @@ def delete_step(course_id, section_place, lesson_place):
         steps = Step.query.filter_by(lesson_id=step.lesson_id).order_by(Step.place).all()
         for p, st in enumerate(steps, start=1):
             st.place = p
+            st.content_path = update_step_place(st.content_path, p)
 
         db.session.commit()
-        return jsonify(msg=f'Successfully deleted step {step.id} from\n{step.content_path}')
+        return jsonify(msg=f'Successfully deleted step {step.id} from\n{step.content_path}'), 200
     except Exception as e:
         return jsonify(msg=f'Server error, please report: {e}'), 500
 
