@@ -34,7 +34,7 @@ def my_profile():
         return jsonify(msg=f'Server error, report please: {e}'), 500
 
 
-@user_pb.route('/<int:user_id>/profile')
+@user_pb.route('/<int:user_id>')
 def user_profile(user_id):
     profile = Profile.query.filter_by(user_id=user_id).one_or_none()
 
@@ -134,6 +134,7 @@ def get_avatar(user_id):
     return jsonify(msg='No ava'), 404
 
 @user_pb.route('/created-courses')
+@jwt_required()
 def get_created_courses():
     courses = [ {
         'title': c.title,
