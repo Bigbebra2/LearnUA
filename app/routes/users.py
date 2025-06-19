@@ -7,7 +7,6 @@ from ..extensions import db
 import os
 from werkzeug.utils import secure_filename
 from ..utils import delete_all_files
-from datetime import datetime
 
 
 user_pb = Blueprint('user', __name__)

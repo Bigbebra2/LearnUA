@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, HttpUrl, ConfigDict
-from typing import Annotated, Literal, Any
+from typing import Annotated, Literal
 
 
 # Common types
@@ -137,3 +137,10 @@ class StepIn(BaseModel):
 
 class StepQuery(BaseModel):
     step_place: int
+
+class SectionQuery(BaseModel):
+    course_id: int
+
+class LessonQuery(BaseModel):
+    course_id: int
+    section_place: int
